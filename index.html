@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <!-- 針對手機版優化，防止縮放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JK日本蜜月 App</title>
+    
+    <!-- 引入 Tailwind CSS 框架 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 和 ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel 讓我們可以在瀏覽器執行 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f5f4; overflow: hidden; }
+        /* 隱藏滾動條但保留滾動功能 */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 內建圖示庫 ---
+        const IconWrapper = ({ children, size = 24, className = '', fill = 'none' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const MapIcon = (p) => <IconWrapper {...p}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></IconWrapper>;
+        const CloudSunIcon = (p) => <IconWrapper {...p}><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M2 12h2"/><path d="m20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></IconWrapper>;
+        const WalletIcon = (p) => <IconWrapper {...p}><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></IconWrapper>;
+        const InfoIcon = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconWrapper>;
+        const HeartIcon = (p) => <IconWrapper {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></IconWrapper>;
+        const TrainIcon = (p) => <IconWrapper {...p}><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h0"/><path d="M16 15h0"/></IconWrapper>;
+        const HotelIcon = (p) => <IconWrapper {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></IconWrapper>;
+        const UtensilsIcon = (p) => <IconWrapper {...p}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconWrapper>;
+        const ChevronDownIcon = (p) => <IconWrapper {...p}><polyline points="6 9 12 15 18 9"/></IconWrapper>;
+        const ChevronUpIcon = (p) => <IconWrapper {...p}><polyline points="18 15 12 9 6 15"/></IconWrapper>;
+        const PlusIcon = (p) => <IconWrapper {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconWrapper>;
+        const Trash2Icon = (p) => <IconWrapper {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconWrapper>;
+        const CameraIcon = (p) => <IconWrapper {...p}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconWrapper>;
+        const MapPinIcon = (p) => <IconWrapper {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconWrapper>;
+
+        // --- 元件：Google Map 連結 ---
+        const MapLink = ({ text, query }) => (
+            <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || text)}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[#5a6e63] hover:text-[#45574d] font-bold underline decoration-[#859A8F]/60 underline-offset-2 inline-flex items-center gap-0.5 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <MapPinIcon size={12} className="inline" />
+                {text}
+            </a>
+        );
+
+        // --- 資料區 (依據 2026-05-20 新截圖更新) ---
+        const tripData = [
+            {
+                id: 1,
+                date: "5/23",
+                day: "六",
+                location: "台北 / 橫濱",
+                activities: [
+                    { time: "09:30", desc: "出門" },
+                    { time: "10:00", desc: "機場 check in 商務艙 > 國泰貴賓室" },
+                    { time: "13:00 - 17:15", desc: "抵達東京 > 前往橫濱 > 飯店 Check-in" },
+                    { time: "晚上", desc: <>晚餐 &gt; <MapLink text="BAY QUARTER" query="Yokohama Bay Quarter" /> 海港夜景 &gt; <MapLink text="臨港公園" query="Rinko Park Yokohama" /></> }
+                ],
+                transport: "N'EX現場購票",
+                notes: <>晚餐：<MapLink text="荒井屋Araiya (Sogo橫濱店)" query="荒井屋 そごう横浜店" /><br/>晚餐備案：<MapLink text="Yokohama Shouten" />, <MapLink text="Okkon izakaya sukiyaki" /></>,
+                hotel: <MapLink text="橫濱 Sotetsu Fresa Inn Yokohama Higashiguchi" query="Sotetsu Fresa Inn Yokohama Higashiguchi" />
+            },
+            {
+                id: 2,
+                date: "5/24",
+                day: "日",
+                location: "熱海",
+                activities: [
+                    { time: "早上", desc: <>橫濱吃早午餐</> },
+                    { time: "11:00", desc: "要到車站搭車" },
+                    { time: "11:24 - 12:17", desc: "踴子號橫濱直達熱海 > 酒店 check in" },
+                    { time: "午餐", desc: <><MapLink text="うなぎ池波" /> 鰻魚飯</> },
+                    { time: "下午", desc: <><MapLink text="MOA美術館" /> &gt; <MapLink text="來宮神社" />(大楠樹祈福) 步道 &gt; 溫泉街</> },
+                    { time: "傍晚", desc: "回酒店泡湯" },
+                    { time: "18:00", desc: "溫泉旅館懷石料理晚餐" },
+                    { time: "20:10", desc: "熱海花火節" }
+                ],
+                transport: "Saphir踴子號",
+                notes: <>上午十點買 <MapLink text="Echiré" query="Echiré Yokohama" /><br/>早午餐：<MapLink text="Merengue みなとみらい店" />, <MapLink text="flour+water 横浜" /><br/>晚餐：溫泉旅館懷石料理</>,
+                hotel: <MapLink text="熱海溫泉櫻花屋旅館" query="熱海温泉 櫻休館" />
+            },
+            {
+                id: 3,
+                date: "5/25",
+                day: "一",
+                location: "伊豆",
+                activities: [
+                    { time: "早上", desc: "酒店早餐" },
+                    { time: "10:23", desc: "搭踴子號 > 到伊豆 > 寄放行李" },
+                    { time: "下午", desc: <><MapLink text="大室山纜車" /> &gt; <MapLink text="伊豆仙人掌動物園" /> &gt; <MapLink text="城崎海岸門脇吊橋" /></> },
+                    { time: "15:00", desc: "飯店 Check-in > 泡湯" },
+                    { time: "18:00", desc: "溫泉旅館懷石料理晚餐" }
+                ],
+                transport: "Odoriko踴子號",
+                notes: <>飯店交通參考：https://www.izuakazawa.jp/access/<br/>晚餐：溫泉旅館懷石料理</>,
+                hotel: <MapLink text="伊豆赤沢迎賓館 Akazawa Geihinkan" />
+            },
+            {
+                id: 4,
+                date: "5/26",
+                day: "二",
+                location: "伊豆 / 箱根",
+                activities: [
+                    { time: "早上", desc: "酒店早餐" },
+                    { time: "10:42", desc: "搭車 &gt;&gt; 小田原 &gt;&gt; 箱根湯本" },
+                    { time: "12:15", desc: "「箱根行李服務」寄行李 > 箱根溫泉街" },
+                    { time: "12:30", desc: "箱根溫泉街 午餐" },
+                    { time: "14:00", desc: <><MapLink text="湯坂路古道" query="湯坂路" /> <MapLink text="玉簾瀑布" query="玉簾の滝" /></> },
+                    { time: "15:00", desc: "酒店 check in" },
+                    { time: "18:30", desc: "溫泉旅館懷石料理晚餐" }
+                ],
+                transport: "Odoriko踴子號, 箱根周遊券",
+                notes: <>行李運送服務櫃檯: 箱根湯本站，櫃檯就在月台出口(剪票口)旁邊，認明 "Carry Service"<br/>晚餐：溫泉旅館懷石料理</>,
+                hotel: <MapLink text="箱根湯本溫泉月之宿紗羅 Tsukino Yado Sara" />
+            },
+            {
+                id: 5,
+                date: "5/27",
+                day: "三",
+                location: "箱根",
+                activities: [
+                    { time: "早上", desc: "酒店早餐 > 寄行李" },
+                    { time: "08:30", desc: "出門 箱根環狀線" },
+                    { time: "上午", desc: <><MapLink text="箱根神社水上鳥居" /> &gt; <MapLink text="Bakery and table" query="Bakery and table Hakone" /> / 美術館</> },
+                    { time: "下午", desc: <>蘆之湖海賊船 &gt; 空中纜車 &gt; <MapLink text="大涌谷黑蛋" query="大涌谷" /> &gt; <MapLink text="箱根美術館" /></> },
+                    { time: "16:00前", desc: "空中纜車 > 登山電車 > 箱根湯本領行李" },
+                    { time: "17:46", desc: "直達車回新宿 > 吃燒肉" }
+                ],
+                transport: "箱根周遊券, 小田急浪漫特快 (Romancecar) 回新宿",
+                notes: <>晚餐：<MapLink text="長春館燒肉" query="長春館 新宿" /></>,
+                hotel: "新宿 (接下來皆住新宿)"
+            },
+            {
+                id: 6,
+                date: "5/28",
+                day: "四",
+                location: "高崎 / 澀谷",
+                activities: [
+                    { time: "早上", desc: "早午餐" },
+                    { time: "12:00前", desc: "要搭JR去大宮" },
+                    { time: "12:49", desc: "搭新幹線到群馬縣高崎" },
+                    { time: "14:00", desc: <><MapLink text="大門屋彩繪" query="大門屋 高崎" /> &gt; <MapLink text="少林山 達磨寺" /> &gt; 買登利平新幹線上吃</> },
+                    { time: "19:30", desc: "回到市區" },
+                    { time: "晚上", desc: "新宿購物 > 晚餐" }
+                ],
+                transport: "JR 埼京線 (紅色路線), JR 湘南新宿線 (橘色/綠色路線), 新幹線大宮 (Omiya) → 高崎",
+                notes: <>美食/伴手禮：<MapLink text="A Happy Pancake Omotesando" />, <MapLink text="AMAM DACOTAN cafe&bake" />, <MapLink text="GARIGUETTE" />, <MapLink text="Harbs" /></>,
+                hotel: "新宿"
+            },
+            {
+                id: 7,
+                date: "5/29",
+                day: "五",
+                location: "原宿 / 澀谷",
+                activities: [
+                    { time: "10:30", desc: <>午餐<MapLink text="敘敘苑燒肉" query="敘敘苑" /> &gt; <MapLink text="晴空塔" /> &gt; 購物</> },
+                    { time: "下午", desc: <>表參道<MapLink text="lelabo青山店" query="Le Labo Aoyama" /> &gt; <MapLink text="明治神宮" /> (16:00前要離開)</> },
+                    { time: "16:40", desc: <><MapLink text="澀谷 SHIBUYA SKY" /> &gt; <MapLink text="極味屋 澀谷PARCO店" query="極味屋 澀谷PARCO店" /></> },
+                    { time: "晚上", desc: "串燒" }
+                ],
+                transport: "地鐵",
+                notes: <>清單：<MapLink text="Le Café Ami" />, <MapLink text="Bills Omotesando" />, <MapLink text="Eggs 'n Things" />, <MapLink text="Higuma Doughnuts × Coffee Wrights" />, <MapLink text="CAFE AALIYA" /></>,
+                hotel: "新宿"
+            },
+            {
+                id: 8,
+                date: "5/30",
+                day: "六",
+                location: "高尾山",
+                activities: [
+                    { time: "08:30", desc: <><MapLink text="高尾山" /> &gt; 吊椅纜車 &gt; 健行、<MapLink text="藥王院參拜" query="高尾山 藥王院" />、山頂展望 &gt; 走 1 號步道</> },
+                    { time: "下午", desc: "回新宿" },
+                    { time: "17:30", desc: <><MapLink text="扇大橋" query="扇大橋" />野餐 &gt; 足立花火 (扇大橋站下車往西新井方向(北側)河堤空地)</> },
+                    { time: "晚上", desc: "回新宿消夜" }
+                ],
+                transport: "京王電鐵京王線特急 (Keio Limited Express) 直達 (京王新宿站 > 高尾山口站)",
+                notes: <>晚餐/宵夜：<MapLink text="串燒Fukumimi Shinjuku" />, <MapLink text="鳥貴族 新宿3丁目店" /><br/>回新宿買 <MapLink text="Echiré" query="Echiré Shinjuku" /></>,
+                hotel: "新宿"
+            },
+            {
+                id: 9,
+                date: "5/31",
+                day: "日",
+                location: "東京 / 台北",
+                activities: [
+                    { time: "09:00", desc: "搭 N'EX 前往機場" },
+                    { time: "11:00", desc: "機場 Check in" },
+                    { time: "13:25", desc: "起飛" }
+                ],
+                transport: "預約 N'EX 特快",
+                notes: "準備回家囉！",
+                hotel: "溫暖的家"
+            }
+        ];
+
+        const weatherData = [
+            { date: "5/23", icon: "🌤️", temp: "22° / 16°", desc: "晴時多雲" },
+            { date: "5/24", icon: "☀️", temp: "24° / 17°", desc: "晴朗" },
+            { date: "5/25", icon: "⛅", temp: "23° / 15°", desc: "多雲" },
+            { date: "5/26", icon: "🌦️", temp: "20° / 14°", desc: "短暫陣雨" },
+            { date: "5/27", icon: "🌤️", temp: "21° / 13°", desc: "晴時多雲" },
+            { date: "5/28", icon: "☀️", temp: "25° / 16°", desc: "晴朗" },
+            { date: "5/29", icon: "🌤️", temp: "24° / 17°", desc: "晴時多雲" },
+            { date: "5/30", icon: "☀️", temp: "26° / 18°", desc: "晴朗炎熱" },
+            { date: "5/31", icon: "⛅", temp: "23° / 17°", desc: "多雲" }
+        ];
+
+        // --- 主程式 App ---
+        function App() {
+            const [activeTab, setActiveTab] = useState('itinerary');
+
+            const targetDate = new Date('2026-05-23T00:00:00');
+            const today = new Date();
+            const diffTime = targetDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const countdownText = diffDays > 0 ? `倒數 ${diffDays} 天` : (diffDays >= -8 ? '蜜月中 💕' : '期待下次旅行');
+
+            const handleCameraClick = (e) => {
+                if(e.target.files && e.target.files.length > 0) {
+                    alert('📸 捕捉到甜蜜瞬間！');
+                }
+            };
+
+            return (
+                <div className="w-full md:max-w-md mx-auto h-[100dvh] flex flex-col bg-[#f4f5f4] text-slate-800 font-sans shadow-2xl relative overflow-hidden">
+                    {/* Header */}
+                    <header className="bg-[#859A8F] text-white pt-10 pb-4 px-6 rounded-b-[2rem] shadow-md z-10 flex-shrink-0">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <div className="flex items-baseline gap-2">
+                                    <h1 className="text-2xl font-bold tracking-wider">JK日本蜜月</h1>
+                                    <span className="text-xs bg-white/30 px-2 py-1 rounded-full font-bold shadow-sm border border-white/20 whitespace-nowrap">
+                                        {countdownText}
+                                    </span>
+                                </div>
+                                <p className="text-[#dbe3df] text-sm mt-1 flex items-center gap-1">
+                                    <HeartIcon size={14} fill="currentColor" /> 九天八夜專屬行程
+                                </p>
+                            </div>
+                            <label className="bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer hover:bg-white/30 transition shadow-sm active:scale-95">
+                                <CameraIcon size={24} />
+                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraClick} />
+                            </label>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto pb-24 scroll-smooth">
+                        {activeTab === 'itinerary' && <ItineraryView />}
+                        {activeTab === 'weather' && <WeatherView />}
+                        {activeTab === 'expense' && <ExpenseView />}
+                        {activeTab === 'info' && <InfoView />}
+                    </main>
+
+                    {/* Bottom Navigation */}
+                    <nav className="bg-white absolute bottom-0 w-full h-20 rounded-t-[2rem] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex justify-around items-center px-4 z-20">
+                        <NavButton id="itinerary" icon={<MapIcon size={24} />} label="行程" isActive={activeTab === 'itinerary'} onClick={() => setActiveTab('itinerary')} />
+                        <NavButton id="weather" icon={<CloudSunIcon size={24} />} label="天氣" isActive={activeTab === 'weather'} onClick={() => setActiveTab('weather')} />
+                        <NavButton id="expense" icon={<WalletIcon size={24} />} label="記帳" isActive={activeTab === 'expense'} onClick={() => setActiveTab('expense')} />
+                        <NavButton id="info" icon={<InfoIcon size={24} />} label="資訊" isActive={activeTab === 'info'} onClick={() => setActiveTab('info')} />
+                    </nav>
+                </div>
+            );
+        }
+
+        // --- 子元件 ---
+        function NavButton({ icon, label, isActive, onClick }) {
+            return (
+                <button 
+                    onClick={onClick}
+                    className={`flex flex-col items-center justify-center w-16 transition-all duration-300 ${isActive ? 'text-[#6c8276] scale-110' : 'text-slate-400 hover:text-[#859A8F]'}`}
+                >
+                    <div className={`${isActive ? 'bg-[#859A8F]/20 p-2 rounded-full mb-1' : 'mb-1'}`}>
+                        {icon}
+                    </div>
+                    <span className="text-xs font-medium">{label}</span>
+                </button>
+            );
+        }
+
+        function ItineraryView() {
+            const [expandedDay, setExpandedDay] = useState(1);
+            const today = new Date();
+            const todayStr = `${today.getMonth() + 1}/${today.getDate()}`;
+            const todayWeather = weatherData.find(w => w.date === todayStr) || { icon: "☀️", temp: "22° / 16°", desc: "晴朗舒適 (預報)", location: "東京" };
+
+            return (
+                <div className="p-4 space-y-4">
+                    <div className="flex justify-start mb-1 pl-1">
+                        <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-sm border border-[#859A8F]/30 text-slate-600">
+                            <span className="text-lg leading-none drop-shadow-sm">{todayWeather.icon}</span>
+                            <span className="font-bold text-slate-700">{todayWeather.temp}</span>
+                            <span className="text-xs text-slate-500 border-l border-slate-200 pl-2">{todayWeather.desc}</span>
+                        </div>
+                    </div>
+
+                    {tripData.map((day) => (
+                        <div key={day.id} className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
+                            <div 
+                                className={`p-4 flex justify-between items-center cursor-pointer ${expandedDay === day.id ? 'bg-[#859A8F]/10' : ''}`}
+                                onClick={() => setExpandedDay(expandedDay === day.id ? null : day.id)}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-[#859A8F] text-white w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-inner">
+                                        <span className="text-xs opacity-90">{day.day}</span>
+                                        <span className="text-lg font-bold leading-none">{day.date.split('/')[1]}</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-700 text-lg">Day {day.id}</h3>
+                                        <p className="text-slate-500 text-sm flex items-center gap-1">
+                                            <MapIcon size={12} className="text-[#859A8F]" /> {day.location}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div>
+                                    {expandedDay === day.id ? <ChevronUpIcon size={20} className="text-[#859A8F]" /> : <ChevronDownIcon size={20} className="text-slate-300" />}
+                                </div>
+                            </div>
+
+                            {expandedDay === day.id && (
+                                <div className="p-5 pt-2 border-t border-[#859A8F]/20">
+                                    <div className="relative pl-4 border-l-2 border-[#859A8F]/40 ml-2 space-y-4 mb-6 mt-4">
+                                        {day.activities.map((act, idx) => (
+                                            <div key={idx} className="relative">
+                                                <div className="absolute -left-[23px] top-1 w-3 h-3 bg-white border-2 border-[#859A8F] rounded-full"></div>
+                                                <div className="text-sm font-semibold text-[#6c8276] mb-0.5">{act.time}</div>
+                                                <div className="text-slate-600 text-sm">{act.desc}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid gap-3">
+                                        {day.transport && (
+                                            <div className="bg-blue-50 p-3 rounded-xl flex gap-3 text-sm items-start">
+                                                <TrainIcon size={18} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                                                <div className="text-slate-700">{day.transport}</div>
+                                            </div>
+                                        )}
+                                        {day.hotel && (
+                                            <div className="bg-orange-50 p-3 rounded-xl flex gap-3 text-sm items-start">
+                                                <HotelIcon size={18} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                                                <div className="text-slate-700 font-medium">{day.hotel}</div>
+                                            </div>
+                                        )}
+                                        {day.notes && (
+                                            <div className="bg-emerald-50 p-3 rounded-xl flex gap-3 text-sm items-start">
+                                                <UtensilsIcon size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                <div className="text-slate-700">{day.notes}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        function WeatherView() {
+            return (
+                <div className="p-6">
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-slate-800">天氣預報參考</h2>
+                        <p className="text-slate-500 text-sm mt-1">為你們的九天旅程準備舒適的穿搭</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        {weatherData.map((day, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center">
+                                <span className="text-slate-400 text-xs font-medium mb-2">{day.date}</span>
+                                <div className="text-4xl mb-2 filter drop-shadow-sm">{day.icon}</div>
+                                <span className="font-bold text-slate-700">{day.temp}</span>
+                                <span className="text-slate-500 text-xs mt-1">{day.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-6 bg-white/60 p-4 rounded-xl border border-[#859A8F]/20 text-sm text-slate-600">
+                        <p className="flex gap-2 items-center"><InfoIcon size={16} className="text-[#859A8F]" /> 五月底的日本天氣通常舒適，但早晚溫差稍大，建議帶一件薄外套或防風外套哦！箱根跟高尾山會比較涼。</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function ExpenseView() {
+            const [expenses, setExpenses] = useState([
+                { id: 1, desc: '機票', amount: 35000, category: '交通' },
+                { id: 2, desc: '住宿訂金', amount: 15000, category: '住宿' },
+            ]);
+            const [newDesc, setNewDesc] = useState('');
+            const [newAmount, setNewAmount] = useState('');
+
+            const total = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
+
+            const handleAdd = (e) => {
+                e.preventDefault();
+                if (!newDesc || !newAmount) return;
+                const newItem = {
+                    id: Date.now(),
+                    desc: newDesc,
+                    amount: Number(newAmount),
+                    category: '花費'
+                };
+                setExpenses([newItem, ...expenses]);
+                setNewDesc('');
+                setNewAmount('');
+            };
+
+            const handleDelete = (id) => {
+                setExpenses(expenses.filter(e => e.id !== id));
+            };
+
+            return (
+                <div className="p-4 flex flex-col h-full">
+                    <div className="bg-gradient-to-r from-[#859A8F] to-slate-400 rounded-xl p-4 text-white shadow-md mb-4 relative overflow-hidden flex justify-between items-center">
+                        <HeartIcon className="absolute -right-2 -bottom-4 opacity-10 w-24 h-24" />
+                        <div className="relative z-10">
+                            <span className="text-slate-100 text-xs font-medium">總花費 (TWD/JPY)</span>
+                            <div className="text-3xl font-bold mt-0.5">
+                                ${total.toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm relative z-10">
+                            <WalletIcon size={20} className="text-white" />
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleAdd} className="bg-white rounded-xl p-3 shadow-sm mb-4 flex gap-2">
+                        <div className="flex-1 space-y-2">
+                            <input 
+                                type="text" 
+                                placeholder="項目名稱 (例如：敘敘苑燒肉)" 
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#859A8F]/40"
+                                value={newDesc}
+                                onChange={(e) => setNewDesc(e.target.value)}
+                            />
+                            <input 
+                                type="number" 
+                                placeholder="金額" 
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#859A8F]/40"
+                                value={newAmount}
+                                onChange={(e) => setNewAmount(e.target.value)}
+                            />
+                        </div>
+                        <button 
+                            type="submit" 
+                            className="bg-[#859A8F] text-white rounded-xl px-4 flex flex-col items-center justify-center hover:bg-[#6c8276] transition shadow-sm"
+                        >
+                            <PlusIcon size={20} />
+                            <span className="text-xs mt-1">新增</span>
+                        </button>
+                    </form>
+
+                    <div className="flex-1 overflow-y-auto pb-4">
+                        <h3 className="text-slate-700 font-bold mb-2 px-1 text-sm">花費明細</h3>
+                        <div className="space-y-2">
+                            {expenses.map((item) => (
+                                <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-slate-50 p-1.5 rounded-full">
+                                            <WalletIcon size={14} className="text-[#859A8F]" />
+                                        </div>
+                                        <div>
+                                            <div className="text-slate-700 text-sm font-medium">{item.desc}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[#6c8276] font-bold text-sm">${item.amount.toLocaleString()}</span>
+                                        <button onClick={() => handleDelete(item.id)} className="text-slate-300 hover:text-red-400 transition p-1">
+                                            <Trash2Icon size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            {expenses.length === 0 && (
+                                <div className="text-center text-slate-400 text-sm mt-8 bg-white/50 p-4 rounded-xl border border-slate-100">
+                                    目前還沒有任何花費紀錄喔！
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function InfoView() {
+            return (
+                <div className="p-4 space-y-4">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm">
+                        <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-4">
+                            <TrainIcon size={20} className="text-blue-500" /> 交通票券確認清單
+                        </h3>
+                        <ul className="space-y-3 text-sm text-slate-600">
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>現場購買 N'EX 或 巴士車票 (Day 1)</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>預約 Saphir 踴子號、Odoriko 踴子號座位</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>購買箱根周遊券</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>購買小田急浪漫特快回程車票</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>購買高崎新幹線往返車票</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 text-[#859A8F] rounded border-gray-300 focus:ring-[#859A8F]" /> 
+                                <span>預約 N'EX 特快 (回程)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-5 shadow-sm">
+                        <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-4">
+                            <UtensilsIcon size={20} className="text-emerald-600" /> 必吃美食清單
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { name: "荒井屋", q: "荒井屋 そごう横浜店" },
+                                { name: "Okkon 壽喜燒", q: "Okkon izakaya sukiyaki" },
+                                { name: "Merengue", q: "Merengue みなとみらい店" },
+                                { name: "うなぎ池波", q: "うなぎ池波" },
+                                { name: "長春館燒肉", q: "長春館 新宿" },
+                                { name: "Echiré", q: "Echiré" },
+                                { name: "A Happy Pancake", q: "A Happy Pancake Omotesando" },
+                                { name: "Harbs", q: "Harbs 新宿" },
+                                { name: "敘敘苑", q: "敘敘苑" },
+                                { name: "極味屋", q: "極味屋 澀谷PARCO店" },
+                                { name: "Bills", q: "Bills Omotesando" }
+                            ].map((food, i) => (
+                                <a 
+                                    key={i} 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(food.q)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1 rounded-full text-xs font-medium border border-emerald-100 transition-colors flex items-center gap-1"
+                                >
+                                    <MapPinIcon size={10} />
+                                    {food.name}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="bg-[#859A8F]/10 rounded-2xl p-5 shadow-sm text-center border border-[#859A8F]/20">
+                        <HeartIcon className="mx-auto text-[#859A8F] mb-2" size={32} />
+                        <h3 className="font-bold text-[#45574d]">祝你們有趟美好的旅程！</h3>
+                        <p className="text-[#5a6e63] text-sm mt-1">記得多拍點美麗的合照哦 📷</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 渲染到畫面 ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
